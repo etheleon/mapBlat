@@ -22,9 +22,9 @@ buildIntervals <- function(stringSet, minIntervalSize){
 
     sprintf("%s contigs processed", contigDF %>% nrow)
 
+    contigDF$name = rownames(contigDF)
     contigDF                            %>%
-    filter(trueLength>=minIntervalSize) %>%
-    mutate(name = rownames(.))          %$%
+    filter(trueLength>=minIntervalSize) %$%
     GRanges(seqnames   = name,
             ranges     = IRanges(start, end),
             trueLength = trueLength)
@@ -67,36 +67,39 @@ spanningOrNot <- function(gr, startLOC, endLOC){
         )
 }
 
-#' Extends MAX diversity region to capture mRNAs mapping to ends of reads when executing 100% percent identity read matches
+#' Extends MAX diversity region to capture mRNAs mapping to ends of reads when executing 100 percent identity read matches
+
 #'
-#' extendRange to allow mapping using Blat. Ie. 100% map to mRNAs which touch the ends of the contigs
+#' \code{extendRange} to allow mapping using Blat. Ie. Full map to mRNAs which touch the ends of the contigs
 #'
-#' @param spanningGR
-#' @param truncGR
-#' @param insideGR
-#' @param mRNAsize
-#' @param msaLength
+#' Function builds the range
+#' @param spanningGR the spanning Genomicranges obj
+#' @param truncGR the truncated Genomicranges obj
+#' @param insideGR the inside Genomicranges obj
+#' @param mRNAsize the size of the mRNA
+#' @param msaLength the MSA length
 #'
-#' @return list 
+#' @return list
 #'
 #' @export
-extendRange <- function(spanningGR,truncGR,insideGR, mRNAsize, msaLength){    #the mRNA size must be after taking away the 1st read
+extendRange <- function(spanningGR,truncGR,insideGR, mRNAsize, msaLength){    
+    #the mRNA size must be after taking away the 1st read
     #spanning
     start(spanningGR) = sapply(start(spanningGR), function(x) ifelse (x - mRNAsize  <=  0,0,x - mRNAsize) )
     end(spanningGR)   = sapply(end(spanningGR), function(x)   ifelse (x + mRNAsize  >=  msaLength,msaLength,x+ mRNAsize))
-#Truncated
+    #Truncated
     #which end
     startEND = do.call(rbind,mapply(function(spillover,startLOC,endLOC){
         if(spillover == 'left'){
-            data.frame(newstart    = ifelse(startLOC-mRNAsize < 0, 0,startLOC-mRNAsize), newend=endLOC)
+            data.frame(newstart    = ifelse(startLOC-mRNAsize < 0, 0,startLOC - mRNAsize), newend = endLOC)
         }else{
-            data.frame(newstart    =startLOC, newend=ifelse(endLOC+mRNAsize> msaLength, msaLength,endLOC+mRNAsize))
+            data.frame(newstart = startLOC, newend = ifelse((endLOC + mRNAsize) > msaLength, msaLength,endLOC + mRNAsize))
         }
     },
        spillover = mcols(truncGR)$spillover,
        startLOC  = start(truncGR),
        endLOC    = end(truncGR),
-       SIMPLIFY=F))
+       SIMPLIFY=FALSE))
     start(truncGR) = startEND$newstart
     end(truncGR) = startEND$newend
 mcols(truncGR)@listData = list(trueLength = mcols(truncGR)@listData$trueLength)
@@ -109,4 +112,22 @@ mcols(spanningGR)$type = 'spanning'
 mcols(truncGR)$type = 'trunc'
 mcols(insideGR)$type = 'inside'
 inTheWindow = c(spanningGR,truncGR,insideGR)    #should include the identity as well.
+}
+
+#' extractLoc: extracts MSA information from the header of the FASTA files
+#'
+#' takes info in header of FASTA output from pAss pipeline and generates and location of the MAX Diversity region
+#'
+#' @param fileName the name of the file to inspect
+#'
+#' @return A list with the start and end location
+#'
+#' @export
+extractLoc <- function(fileName){
+    headerUP <- sprintf("head -n1 %s", fileName) %>% system(int = TRUE)
+    mdUP     <- lapply(strsplit(strsplit(headerUP, " ## ")[[1]][2], " "), function(x) strsplit(x,":"))
+    list(
+         startLoc = as.integer(mdUP[[1]][[2]][[2]]),
+         endLoc   = as.integer(mdUP[[1]][[3]][[2]])
+     )
 }

@@ -2,25 +2,28 @@
 % Please edit documentation in R/intervals.R
 \name{extendRange}
 \alias{extendRange}
-\title{Extends MAX diversity region to capture mRNAs mapping to ends of reads when executing 100% percent identity read matches}
+\title{Extends MAX diversity region to capture mRNAs mapping to ends of reads when executing 100 percent identity read matches}
 \usage{
 extendRange(spanningGR, truncGR, insideGR, mRNAsize, msaLength)
 }
 \arguments{
-\item{spanningGR}{}
+\item{spanningGR}{the spanning Genomicranges obj}
 
-\item{truncGR}{}
+\item{truncGR}{the truncated Genomicranges obj}
 
-\item{insideGR}{}
+\item{insideGR}{the inside Genomicranges obj}
 
-\item{mRNAsize}{}
+\item{mRNAsize}{the size of the mRNA}
 
-\item{msaLength}{}
+\item{msaLength}{the MSA length}
 }
 \value{
 list
 }
 \description{
-extendRange to allow mapping using Blat. Ie. 100% map to mRNAs which touch the ends of the contigs
+\code{extendRange} to allow mapping using Blat. Ie. Full map to mRNAs which touch the ends of the contigs
+}
+\details{
+Function builds the range
 }
 
