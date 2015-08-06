@@ -4,7 +4,7 @@
 \alias{make.map.table}
 \title{make.map.table takes the output from map function (mapping reads onto contigs) and}
 \usage{
-make.map.table(contigs, reads)
+make.map.table(contigs, reads, datype = "cDNA")
 }
 \arguments{
 \item{overlaps}{output from the findOverlaps function from IRanges}

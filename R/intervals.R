@@ -82,37 +82,53 @@ spanningOrNot <- function(gr, startLOC, endLOC){
 #' @return list
 #'
 #' @export
-extendRange <- function(spanningGR,truncGR,insideGR, mRNAsize, msaLength){    
-    #the mRNA size must be after taking away the 1st read
-    #spanning
-    start(spanningGR) = sapply(start(spanningGR), function(x) ifelse (x - mRNAsize  <=  0,0,x - mRNAsize) )
-    end(spanningGR)   = sapply(end(spanningGR), function(x)   ifelse (x + mRNAsize  >=  msaLength,msaLength,x+ mRNAsize))
-    #Truncated
-    #which end
-    startEND = do.call(rbind,mapply(function(spillover,startLOC,endLOC){
-        if(spillover == 'left'){
-            data.frame(newstart    = ifelse(startLOC-mRNAsize < 0, 0,startLOC - mRNAsize), newend = endLOC)
-        }else{
-            data.frame(newstart = startLOC, newend = ifelse((endLOC + mRNAsize) > msaLength, msaLength,endLOC + mRNAsize))
-        }
+extendRange <- function
+(   spanningGR,     
+    truncGR,        
+    insideGR,       
+    mRNAsize,       
+    msaLength       
+){    
+inTheWindow = c()
+    #SPANNING
+    if(length(spanningGR) != 0){
+        start(spanningGR) = sapply(start(spanningGR), function(x) ifelse (x - mRNAsize  <=  0,0,x - mRNAsize) )
+        end(spanningGR)   = sapply(end(spanningGR), function(x)   ifelse (x + mRNAsize  >=  msaLength,msaLength,x+ mRNAsize))
+        mcols(spanningGR)$type = 'spanning'
+        inTheWindow = c(spanningGR)
+    }
+
+    #TRUNCATED
+    if(length(truncGR) != 0){
+        startEND = do.call(rbind,mapply(function(spillover,startLOC,endLOC){
+                                        if(spillover == 'left'){
+                                            data.frame(newstart    = ifelse(startLOC-mRNAsize < 0, 0,startLOC-mRNAsize), newend=endLOC)
+                                        }else{
+                                            data.frame(newstart    =startLOC, newend=ifelse(endLOC+mRNAsize> msaLength, msaLength,endLOC+mRNAsize))
+                                        }
     },
-       spillover = mcols(truncGR)$spillover,
-       startLOC  = start(truncGR),
-       endLOC    = end(truncGR),
-       SIMPLIFY=FALSE))
-    start(truncGR) = startEND$newstart
-    end(truncGR) = startEND$newend
-mcols(truncGR)@listData = list(trueLength = mcols(truncGR)@listData$trueLength)
-#Inside (not required)
-#    start(insideGR) = sapply(start(insideGR), function(x) ifelse (x - mRNAsize  <=  0,0,x - mRNAsize) )
-#    end(insideGR)   = sapply(end(insideGR), function(x)   ifelse (x + mRNAsize  >=  msaLength,msaLength,x+ mRNAsize))
-#Increase the span
+    spillover = mcols(truncGR)$spillover,
+    startLOC  = start(truncGR),
+    endLOC    = end(truncGR),
+    SIMPLIFY=F))
+        start(truncGR) = startEND$newstart
+        end(truncGR) = startEND$newend
+        mcols(truncGR)@listData = list(trueLength = mcols(truncGR)@listData$trueLength)
+        mcols(truncGR)$type = 'trunc'
+        inTheWindow = c(inTheWindow, truncGR)
+    }
+        #Inside (not required)
+        #    start(insideGR) = sapply(start(insideGR), function(x) ifelse (x - mRNAsize  <=  0,0,x - mRNAsize) )
+        #    end(insideGR)   = sapply(end(insideGR), function(x)   ifelse (x + mRNAsize  >=  msaLength,msaLength,x+ mRNAsize))
+        #Increase the span
 ####    ~
-mcols(spanningGR)$type = 'spanning'
-mcols(truncGR)$type = 'trunc'
-mcols(insideGR)$type = 'inside'
-inTheWindow = c(spanningGR,truncGR,insideGR)    #should include the identity as well.
+    if(length(insideGR) != 0){
+        mcols(insideGR)$type = 'inside'
+        inTheWindow = c(inTheWindow, insideGR)
+    }
+inTheWindow     #should include the identity as well.
 }
+
 
 #' extractLoc: extracts MSA information from the header of the FASTA files
 #'
