@@ -4,7 +4,7 @@
 #This will parse Daniel's BLAST2LCA mapper output to reflect the NCBI taxonIDs
 
 
-die "USAGE $0 <ncbi.map> <blast2lca>\n" unless $#ARGV == 1;
+die "USAGE $0 <ncbi.map> <blast2lca>\n" unless $#ARGV == 2;
 
 my %map;
 
@@ -19,9 +19,10 @@ while(<$map>)
 }
 
 
-open my $assignment, "<", $ARGV[1] || die "$! blast2lca output not found";
+open my $assignment , "<" , $ARGV[1] || die "$! blast2lca output not found";
+open my $output     , ">" , $ARGV[2] || die "$! output file not specified";
 
-print join(",", qw/ko contig rank taxid score/), "\n";
+print $output join(",", qw/ko contig rank taxid score/), "\n";
 while(<$assignment>)
 {
     chomp;
@@ -29,15 +30,15 @@ while(<$assignment>)
     my $id = shift @entry;
     shift @entry;
     my ($contig, $ko) = (split /\|/, $id);
-    while(@entry){
-
+    while(@entry)
+    {
         my $id                  = shift @entry;
         my $score               = shift @entry;
         $score =~ s/\s//g;
+
         my ($classifier, $name) = (split(/__/, $id));
 
-        print join ',', $ko, $contig,  $classifier, $map{$name}, $score;
-        print "\n"
+        print $output join(',', $ko, $contig,  $classifier, $map{$name}, $score), "\n";
     }
 }
 
