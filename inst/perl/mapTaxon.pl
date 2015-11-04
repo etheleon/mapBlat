@@ -22,7 +22,7 @@ while(<$map>)
 open my $assignment , "<" , $ARGV[1] || die "$! blast2lca output not found";
 open my $output     , ">" , $ARGV[2] || die "$! output file not specified";
 
-print $output join(",", qw/ko contig rank taxid score/), "\n";
+print $output join(",", qw/contID ko contig rank taxid score/), "\n";
 while(<$assignment>)
 {
     chomp;
@@ -30,6 +30,7 @@ while(<$assignment>)
     my $id = shift @entry;
     shift @entry;
     my ($contig, $ko) = (split /\|/, $id);
+    my $contigID = 'ko:'."$ko".':'."$contig";
     while(@entry)
     {
         my $id                  = shift @entry;
@@ -38,7 +39,7 @@ while(<$assignment>)
 
         my ($classifier, $name) = (split(/__/, $id));
 
-        print $output join(',', $ko, $contig,  $classifier, $map{$name}, $score), "\n";
+        print $output join(',', $contigID, $ko, $contig,  $classifier, $map{$name}, $score), "\n";
     }
 }
 
