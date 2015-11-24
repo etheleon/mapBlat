@@ -12,19 +12,19 @@
 #' @export
 buildIntervals <- function(stringSet, minIntervalSize){
     contigDF = stringSet %>%
-    lapply(function(contig) {
+    lapply(function(contig){
         data.frame(
             start      = toString(contig) %>% regexpr("^-*", .) %>% attributes %$% match.length,
             end        = length(contig) - toString(contig) %>% regexpr("-*$", .) %>% attributes %$% match.length,
-            trueLength = gsub('-', "", toString(contig)) %>% nchar)
+            trueLength = gsub('-', "", toString(contig)) %>% nchar) #not really the true length, somehow the pAss pipeline either muscle or something else throws away the head and ends of the contigs good
     }) %>%
     do.call(rbind,.)
 
-    sprintf("%s contigs processed", contigDF %>% nrow)
+    cat(    sprintf("%s contigs processed", contigDF %>% nrow)  )
 
     contigDF$name = rownames(contigDF)
-    contigDF                            %>%
-    filter(trueLength>=minIntervalSize) %$%
+    contigDF                              %>%
+    filter(trueLength  >=minIntervalSize) %$%
     GRanges(seqnames   = name,
             ranges     = IRanges(start, end),
             trueLength = trueLength)
